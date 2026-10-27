@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.energymonitor.recommendation.domain.model.Recommendation;
 import com.energymonitor.recommendation.domain.model.RecommendationStatus;
 import com.energymonitor.recommendation.domain.model.RecommendationType;
+import com.energymonitor.recommendation.infrastructure.JwtKeyedTest;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-class RecommendationPersistenceTest {
+class RecommendationPersistenceTest extends JwtKeyedTest {
 
     private static final Instant T1 = Instant.parse("2026-01-15T08:00:00Z");
     private static final String HOME = "homRecT001";

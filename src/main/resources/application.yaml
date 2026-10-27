@@ -28,6 +28,48 @@ server:
   # service and 8088 the alert service when all run on the same machine.
   port: ${SERVER_PORT:8089}
 
+security:
+  jwt:
+    # The access tokens are issued by the security service; this service only validates them, with
+    # the service's public key and its iss claim (the value the monolith used, kept unchanged).
+    issuer: https://energy-monitor-backend
+    public-key-path: ${SECURITY_JWT_PUBLIC_KEY_PATH:}
+
+# Calls from this service to the others: every one carries the shared token in X-Internal-Token,
+# and the called service checks it and the caller's network.
+internal-api:
+  # Same value in every service. Generate with: openssl rand -hex 32
+  token: ${INTERNAL_API_TOKEN:}
+
+device:
+  # The device service: its internal API answers the devices of a home, their appliance type and
+  # their names. Answers are reused for a while, and the last one is served while the service does
+  # not answer.
+  service:
+    url: ${DEVICE_SERVICE_URL:http://localhost:8084}
+    connect-timeout: 1s
+    read-timeout: 2s
+    ttl: 30s
+    stale-ttl: 1h
+
+home:
+  # The home service: its internal API answers whether a user is a member of a home, who may read
+  # its recommendations, and the consumption limit of a home. Membership is never served stale.
+  service:
+    url: ${HOME_SERVICE_URL:http://localhost:8086}
+    connect-timeout: 1s
+    read-timeout: 2s
+    ttl: 30s
+    stale-ttl: 1h
+
+measurement:
+  # The measurement service: its internal API answers the energy of devices hour by hour and the
+  # devices that report. Never cached: both change with every reading.
+  service:
+    url: ${MEASUREMENT_SERVICE_URL:http://localhost:8085}
+    connect-timeout: 1s
+    read-timeout: 5s
+
 management:
   endpoints:
     web:
