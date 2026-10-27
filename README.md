@@ -1,0 +1,2 @@
+# en-monitor-recommendation-service
+EnergyMonitor recommendation microservice: reviews the hourly consumption of every home that reports, stores a recommendation when one of its rules matches (evening peak, night standby, week-over-week rise, limit projection, device increase), lets the members of the home list, read and delete them, and announces each new recommendation to the notification service. Spring Boot 4, Java 21, hexagonal architecture.
