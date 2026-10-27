@@ -9,9 +9,10 @@ import org.springframework.stereotype.Component;
 
 /**
  * Evaluates the recommendation rules periodically ({@code recommendation.evaluate-interval}, one
- * hour by default). Runs only with {@code recommendation.enabled}
- * ({@code RECOMMENDATION_SCHEDULER_ENABLED}), off by default: while energy-monitor-backend still
- * evaluates, both would store the same advice. The tests leave it off and call the use case.
+ * hour by default; the first run {@code recommendation.initial-delay} after a start). Runs only
+ * with {@code recommendation.enabled} ({@code RECOMMENDATION_SCHEDULER_ENABLED}), on by default:
+ * energy-monitor-backend, which also evaluated, is retired. The tests turn it off and call the use
+ * case.
  */
 @Component
 @ConditionalOnProperty(name = "recommendation.enabled", havingValue = "true")

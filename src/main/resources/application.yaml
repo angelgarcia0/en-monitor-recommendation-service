@@ -94,12 +94,13 @@ messaging:
     confirm-timeout: PT5S
 
 recommendation:
-  # Whether this service runs the hourly evaluation. Off until energy-monitor-backend stops
-  # running its own: with both on, the same advice could be stored and announced twice.
-  enabled: ${RECOMMENDATION_SCHEDULER_ENABLED:false}
+  # Whether this service runs the hourly evaluation. On: energy-monitor-backend, which also
+  # evaluated, is retired. Off only to go back to that backend.
+  enabled: ${RECOMMENDATION_SCHEDULER_ENABLED:true}
   # The rules run over the hourly energy of every home with readings in the last week.
   evaluate-interval: ${RECOMMENDATION_EVALUATE_INTERVAL:PT1H}
-  initial-delay: PT2M
+  # The first run after a start; the end-to-end test shortens it.
+  initial-delay: ${RECOMMENDATION_INITIAL_DELAY:PT2M}
   # Zone of the day-part rules: evening peak (18-22 h), night standby (1-5 h), calendar month.
   zone: ${RECOMMENDATION_ZONE:America/Bogota}
   # The same advice is not repeated for the same home and device within this period.
