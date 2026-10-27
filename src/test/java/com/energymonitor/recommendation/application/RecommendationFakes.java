@@ -2,11 +2,13 @@ package com.energymonitor.recommendation.application;
 
 import com.energymonitor.recommendation.application.port.out.ConsumptionReaderPort;
 import com.energymonitor.recommendation.application.port.out.HomeReaderPort;
+import com.energymonitor.recommendation.application.port.out.RecommendationEventPort;
 import com.energymonitor.recommendation.application.port.out.RecommendationPersistencePort;
 import com.energymonitor.recommendation.domain.model.ConsumptionLimit;
 import com.energymonitor.recommendation.domain.model.HourSample;
 import com.energymonitor.recommendation.domain.model.MonitoredDevice;
 import com.energymonitor.recommendation.domain.model.Recommendation;
+import com.energymonitor.recommendation.domain.model.RecommendationCreated;
 import com.energymonitor.recommendation.domain.model.RecommendationType;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -124,6 +126,15 @@ final class RecommendationFakes {
         public List<String> devicesReportingSince(Instant since) {
             return samples.stream().filter(s -> !s.hourStart().isBefore(since))
                     .map(HourSample::deviceId).distinct().toList();
+        }
+    }
+
+    static final class Events implements RecommendationEventPort {
+        final List<RecommendationCreated> published = new ArrayList<>();
+
+        @Override
+        public void publish(RecommendationCreated event) {
+            published.add(event);
         }
     }
 }
