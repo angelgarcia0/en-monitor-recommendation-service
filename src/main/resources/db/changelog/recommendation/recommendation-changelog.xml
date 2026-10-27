@@ -11,5 +11,6 @@
     -->
 
     <include file="changes/recommendation-001-create-recommendation.xml" relativeToChangelogFile="true"/>
+    <include file="changes/recommendation-002-create-recommendation-outbox.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
