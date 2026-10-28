@@ -1,0 +1,113 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: recommendation-service
+
+  profiles:
+    default: local
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:energy-monitor}
+    password: ${RABBITMQ_PASSWORD:}
+    # A recommendation message is marked as published only after the broker confirms it and a
+    # queue took it (correlated: the return of an unrouted message is known before the
+    # confirmation completes).
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
+  liquibase:
+    # Only the recommendation changesets. The schema is shared with energy-monitor-backend and the
+    # security, device, measurement, home, notification and alert services (ADR-003), and so is the
+    # DATABASECHANGELOG table: each service applies its own changelogs.
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+server:
+  # 8080 is the API gateway, 8082 the security service, 8083 energy-monitor-backend, 8084 the
+  # device service, 8085 the measurement service, 8086 the home service, 8087 the notification
+  # service and 8088 the alert service when all run on the same machine.
+  port: ${SERVER_PORT:8089}
+
+security:
+  jwt:
+    # The access tokens are issued by the security service; this service only validates them, with
+    # the service's public key and its iss claim (the value the monolith used, kept unchanged).
+    issuer: https://energy-monitor-backend
+    public-key-path: ${SECURITY_JWT_PUBLIC_KEY_PATH:}
+
+# Calls from this service to the others: every one carries the shared token in X-Internal-Token,
+# and the called service checks it and the caller's network.
+internal-api:
+  # Same value in every service. Generate with: openssl rand -hex 32
+  token: ${INTERNAL_API_TOKEN:}
+
+device:
+  # The device service: its internal API answers the devices of a home, their appliance type and
+  # their names. Answers are reused for a while, and the last one is served while the service does
+  # not answer.
+  service:
+    url: ${DEVICE_SERVICE_URL:http://localhost:8084}
+    connect-timeout: 1s
+    read-timeout: 2s
+    ttl: 30s
+    stale-ttl: 1h
+
+home:
+  # The home service: its internal API answers whether a user is a member of a home, who may read
+  # its recommendations, and the consumption limit of a home. Membership is never served stale.
+  service:
+    url: ${HOME_SERVICE_URL:http://localhost:8086}
+    connect-timeout: 1s
+    read-timeout: 2s
+    ttl: 30s
+    stale-ttl: 1h
+
+measurement:
+  # The measurement service: its internal API answers the energy of devices hour by hour and the
+  # devices that report. Never cached: both change with every reading.
+  service:
+    url: ${MEASUREMENT_SERVICE_URL:http://localhost:8085}
+    connect-timeout: 1s
+    read-timeout: 5s
+
+messaging:
+  # Topic exchange of the recommendations this service announces (recommendation.created), for the
+  # notification service, which delivers them. Written to the recommendation_outbox table after the
+  # recommendation and relayed every second, up to 50 messages, each confirmed by the broker within
+  # 5 s. Off only to hold the recommendations back: they wait in the table meanwhile.
+  recommendation:
+    exchange: energy-monitor.recommendation
+    relay-enabled: ${RECOMMENDATION_OUTBOX_RELAY_ENABLED:true}
+    poll-interval: PT1S
+    batch-size: 50
+    confirm-timeout: PT5S
+
+recommendation:
+  # Whether this service runs the hourly evaluation. On: energy-monitor-backend, which also
+  # evaluated, is retired. Off only to go back to that backend.
+  enabled: ${RECOMMENDATION_SCHEDULER_ENABLED:true}
+  # The rules run over the hourly energy of every home with readings in the last week.
+  evaluate-interval: ${RECOMMENDATION_EVALUATE_INTERVAL:PT1H}
+  # The first run after a start; the end-to-end test shortens it.
+  initial-delay: ${RECOMMENDATION_INITIAL_DELAY:PT2M}
+  # Zone of the day-part rules: evening peak (18-22 h), night standby (1-5 h), calendar month.
+  zone: ${RECOMMENDATION_ZONE:America/Bogota}
+  # The same advice is not repeated for the same home and device within this period.
+  cool-down: P7D
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
